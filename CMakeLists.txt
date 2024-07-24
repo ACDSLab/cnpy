@@ -1,11 +1,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 if(COMMAND cmake_policy)
-	cmake_policy(SET CMP0003 NEW)
+  cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
 project(cnpy)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable -Wno-unused-but-set-variable")
 set(LIBRARY_NAME ${PROJECT_NAME})
 option(ENABLE_STATIC "Build static (.a) library" ON)
 
@@ -15,22 +18,30 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 
 add_library(${LIBRARY_NAME} SHARED "cnpy.cpp")
 target_link_libraries(cnpy ${ZLIB_LIBRARIES})
-install(TARGETS ${LIBRARY_NAME}
-		EXPORT ${PROJECT_NAME}-targets
-		LIBRARY DESTINATION lib
-		PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+set(LIB_INSTALL_DIR "lib/${PROJECT_NAME}")
+if (WIN32)
+  install(TARGETS ${LIBRARY_NAME}
+      EXPORT ${PROJECT_NAME}-targets
+      RUNTIME DESTINATION ${LIB_INSTALL_DIR}
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+else()
+  install(TARGETS ${LIBRARY_NAME}
+      EXPORT ${PROJECT_NAME}-targets
+      LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endif()
 if(ENABLE_STATIC)
     add_library(${LIBRARY_NAME}-static STATIC "cnpy.cpp")
     set_target_properties(cnpy-static PROPERTIES OUTPUT_NAME "cnpy")
-    install(TARGETS "cnpy-static" ARCHIVE DESTINATION lib)
+    install(TARGETS "cnpy-static" ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
 endif(ENABLE_STATIC)
 
 install(FILES "cnpy.h"
-		DESTINATION include)
+    DESTINATION include/${PROJECT_NAME})
 install(FILES "mat2npz" "npy2mat" "npz2mat"
-		DESTINATION bin
-		PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    DESTINATION bin
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 add_executable(example1 example1.cpp)
 target_link_libraries(example1 cnpy)
@@ -47,6 +58,7 @@ export(PACKAGE ${PROJECT_NAME})
 
 include(CMakePackageConfigHelpers)
 
+# BUILD CONFIG
 set(TMP_INCLUDE_INSTALL_DIR ${PROJECT_SOURCE_DIR})
 configure_package_config_file(
   ${PROJECT_SOURCE_DIR}/cmake/Modules/project-config.cmake.in
@@ -54,3 +66,23 @@ configure_package_config_file(
   INSTALL_DESTINATION ${PROJECT_BINARY_DIR}
   PATH_VARS TMP_INCLUDE_INSTALL_DIR
   )
+
+# INSTALL CONFIG
+set(CMAKE_CONFIG_DEST "lib/cmake/${PROJECT_NAME}")
+set(TMP_INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/Modules/project-config.cmake.in
+  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+  INSTALL_DESTINATION ${CMAKE_CONFIG_DEST}
+  PATH_VARS TMP_INCLUDE_INSTALL_DIR
+  )
+
+install(
+  EXPORT ${PROJECT_NAME}-targets
+  DESTINATION ${CMAKE_CONFIG_DEST}
+)
+
+install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+  # ${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}-config-version.cmake
+  DESTINATION ${CMAKE_CONFIG_DEST}
+)
