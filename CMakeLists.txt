@@ -5,7 +5,10 @@ endif(COMMAND cmake_policy)
 
 project(cnpy)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-unused-variable -Wno-unused-but-set-variable")
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable -Wno-unused-but-set-variable")
 set(LIBRARY_NAME ${PROJECT_NAME})
 option(ENABLE_STATIC "Build static (.a) library" ON)
 
