@@ -1,9 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+if (CMAKE_VERSION VERSION_LESS 3.12)
+  cmake_minimum_required(VERSION 3.8)
+else()
+  cmake_minimum_required(VERSION 3.8...3.24)
+endif()
 
-project(cnpy)
+project(cnpy LANGUAGES C CXX)
 
 if (NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 11)
